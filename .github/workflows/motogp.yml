@@ -1,0 +1,38 @@
+name: MotoGP Schedule Sync
+
+on:
+  schedule:
+    # Otomatis berjalan setiap 30 menit (mengupdate status UPCOMING / LIVE & ganti seri otomatis)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Tombol manual "Run workflow"
+
+jobs:
+  run-motogp:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 1. Download kode dari repo private Khofah567765/bulak
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: 'Khofah567765/bulak'
+          token: ${{ secrets.GH_PAT }}
+
+      # 2. Install library yang dibutuhkan (wajib sertakan pillow untuk banner)
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests firebase-admin pillow
+
+      # 3. Jalankan motogp_firebase.py dan push ke Firebase
+      - name: Sync MotoGP Schedule
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          MOTOGP_LINKED_CHANNEL_ID: "motogp"
+        run: python motogp_firebase.py --days 7
